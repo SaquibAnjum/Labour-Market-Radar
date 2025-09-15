@@ -1,28 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
 import FilterBar from '../components/FilterBar';
 import { useApp } from '../context/AppContext';
 import { radarAPI } from '../services/api';
-import { Map, Loader, AlertCircle } from 'lucide-react';
+import { Map, Loader, BarChart3 } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-// India topography GeoJSON URL (you can host your own or use a CDN)
-const INDIA_TOPO_JSON = "https://cdn.jsdelivr.net/npm/india-atlas@3/states.json";
 
 const Heatmap = () => {
   const { filters } = useApp();
   const [heatmapData, setHeatmapData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [tooltipContent, setTooltipContent] = useState(null);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
   // Load heatmap data when filters change
   useEffect(() => {
-    if (filters.skill) {
-      loadHeatmapData();
-    } else {
-      setHeatmapData([]);
-    }
+    loadHeatmapData();
   }, [filters]);
 
   const loadHeatmapData = async () => {
@@ -38,56 +28,21 @@ const Heatmap = () => {
     }
   };
 
-  // Get job count for a district
-  const getJobCount = (districtName) => {
-    const districtData = heatmapData.find(
-      d => d.district.toLowerCase() === districtName.toLowerCase()
-    );
-    return districtData ? districtData.jobCount : 0;
-  };
-
   // Calculate color intensity based on job count
-  const getColorIntensity = (jobCount) => {
-    if (!heatmapData.length) return '#e5e7eb'; // gray-200
-    
-    const maxJobs = Math.max(...heatmapData.map(d => d.jobCount));
-    if (maxJobs === 0) return '#e5e7eb';
+  const getColorIntensity = (jobCount, maxJobs) => {
+    if (maxJobs === 0) return 'bg-gray-200 dark:bg-gray-700';
     
     const intensity = jobCount / maxJobs;
     
-    if (intensity === 0) return '#e5e7eb'; // gray-200
-    if (intensity <= 0.2) return '#dbeafe'; // blue-100
-    if (intensity <= 0.4) return '#bfdbfe'; // blue-200
-    if (intensity <= 0.6) return '#93c5fd'; // blue-300
-    if (intensity <= 0.8) return '#60a5fa'; // blue-400
-    return '#3b82f6'; // blue-500
+    if (intensity === 0) return 'bg-gray-200 dark:bg-gray-700';
+    if (intensity <= 0.2) return 'bg-blue-100 dark:bg-blue-900/20';
+    if (intensity <= 0.4) return 'bg-blue-200 dark:bg-blue-800/30';
+    if (intensity <= 0.6) return 'bg-blue-300 dark:bg-blue-700/40';
+    if (intensity <= 0.8) return 'bg-blue-400 dark:bg-blue-600/50';
+    return 'bg-blue-500 dark:bg-blue-500/60';
   };
 
-  // Handle mouse events for tooltip
-  const handleMouseEnter = (geo, event) => {
-    const districtName = geo.properties.NAME_1 || geo.properties.district;
-    const jobCount = getJobCount(districtName);
-    
-    setTooltipContent({
-      district: districtName,
-      jobCount: jobCount
-    });
-    setTooltipPosition({
-      x: event.clientX,
-      y: event.clientY
-    });
-  };
-
-  const handleMouseMove = (event) => {
-    setTooltipPosition({
-      x: event.clientX,
-      y: event.clientY
-    });
-  };
-
-  const handleMouseLeave = () => {
-    setTooltipContent(null);
-  };
+  const maxJobs = heatmapData.length > 0 ? Math.max(...heatmapData.map(d => d.jobCount)) : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -98,7 +53,7 @@ const Heatmap = () => {
             Geographic Heatmap
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Interactive map showing job distribution across districts for selected skills
+            Interactive visualization showing job distribution across districts for selected skills
           </p>
         </div>
 
@@ -114,7 +69,7 @@ const Heatmap = () => {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
                 <Map className="h-5 w-5 mr-2" />
-                India Districts Map
+                District Job Distribution
               </h2>
               {filters.skill && (
                 <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -125,117 +80,104 @@ const Heatmap = () => {
           </div>
 
           {/* Map Content */}
-          <div className="relative">
-            {!filters.skill ? (
-              // No skill selected state
-              <div className="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400">
-                <AlertCircle className="h-16 w-16 mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">Select a Skill to View Heatmap</h3>
-                <p className="text-sm text-center max-w-md">
-                  Please select a skill from the filters above to see the geographic distribution 
-                  of job opportunities across different districts.
-                </p>
-              </div>
-            ) : loading ? (
+          <div className="p-6">
+            {loading ? (
               // Loading state
               <div className="flex items-center justify-center py-20">
                 <Loader className="h-8 w-8 animate-spin text-blue-600" />
-                <span className="ml-2 text-gray-600 dark:text-gray-400">Loading map data...</span>
+                <span className="ml-2 text-gray-600 dark:text-gray-400">Loading heatmap data...</span>
+              </div>
+            ) : heatmapData.length === 0 ? (
+              // No data state
+              <div className="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400">
+                <BarChart3 className="h-16 w-16 mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No Data Available</h3>
+                <p className="text-sm text-center max-w-md">
+                  {filters.skill 
+                    ? `No job data found for "${filters.skill}" in the selected time period.`
+                    : 'Please select a skill from the filters above to see the geographic distribution of job opportunities.'
+                  }
+                </p>
               </div>
             ) : (
-              // Map display
-              <div className="relative h-96 md:h-[600px]">
-                <ComposableMap
-                  projection="geoMercator"
-                  projectionConfig={{
-                    scale: 1000,
-                    center: [78.9629, 20.5937] // Center on India
-                  }}
-                  width={800}
-                  height={600}
-                  style={{ width: "100%", height: "100%" }}
-                >
-                  <ZoomableGroup>
-                    <Geographies geography={INDIA_TOPO_JSON}>
-                      {({ geographies }) =>
-                        geographies.map((geo) => {
-                          const districtName = geo.properties.NAME_1 || geo.properties.district;
-                          const jobCount = getJobCount(districtName);
-                          const fillColor = getColorIntensity(jobCount);
+              // Heatmap visualization
+              <div className="space-y-4">
+                {/* District Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {heatmapData.map((district, index) => (
+                    <div
+                      key={index}
+                      className={`p-4 rounded-lg border-2 transition-all duration-200 hover:shadow-md ${getColorIntensity(district.jobCount, maxJobs)}`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+                          {district.district}
+                        </h3>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                          {district.districtCode}
+                        </span>
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {district.jobCount.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                        job postings
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
-                          return (
-                            <Geography
-                              key={geo.rsmKey}
-                              geography={geo}
-                              fill={fillColor}
-                              stroke="#ffffff"
-                              strokeWidth={0.5}
-                              style={{
-                                default: { outline: "none" },
-                                hover: { 
-                                  outline: "none", 
-                                  fill: "#1e40af", // blue-800
-                                  cursor: "pointer" 
-                                },
-                                pressed: { outline: "none" }
-                              }}
-                              onMouseEnter={(event) => handleMouseEnter(geo, event)}
-                              onMouseMove={handleMouseMove}
-                              onMouseLeave={handleMouseLeave}
-                            />
-                          );
-                        })
-                      }
-                    </Geographies>
-                  </ZoomableGroup>
-                </ComposableMap>
-
-                {/* Tooltip */}
-                {tooltipContent && (
-                  <div
-                    className="absolute pointer-events-none z-50 bg-gray-900 text-white px-3 py-2 rounded-lg shadow-lg text-sm"
-                    style={{
-                      left: tooltipPosition.x + 10,
-                      top: tooltipPosition.y - 10,
-                      transform: 'translate(-50%, -100%)'
-                    }}
-                  >
-                    <div className="font-medium">{tooltipContent.district}</div>
-                    <div className="text-gray-300">
-                      Jobs: {tooltipContent.jobCount.toLocaleString()}
+                {/* Summary Stats */}
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Total Districts</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {heatmapData.length}
                     </div>
                   </div>
-                )}
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Total Jobs</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {heatmapData.reduce((sum, d) => sum + d.jobCount, 0).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Average per District</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {Math.round(heatmapData.reduce((sum, d) => sum + d.jobCount, 0) / heatmapData.length).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
 
           {/* Legend */}
-          {filters.skill && heatmapData.length > 0 && (
+          {heatmapData.length > 0 && (
             <div className="p-6 border-t border-gray-200 dark:border-gray-700">
               <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
                 Job Count Legend
               </h3>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4 flex-wrap">
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 rounded" style={{ backgroundColor: '#e5e7eb' }}></div>
+                  <div className="w-4 h-4 rounded bg-gray-200 dark:bg-gray-700"></div>
                   <span className="text-xs text-gray-600 dark:text-gray-400">0</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 rounded" style={{ backgroundColor: '#dbeafe' }}></div>
-                  <span className="text-xs text-gray-600 dark:text-gray-400">Low</span>
+                  <div className="w-4 h-4 rounded bg-blue-100 dark:bg-blue-900/20"></div>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">Low (1-20%)</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 rounded" style={{ backgroundColor: '#93c5fd' }}></div>
-                  <span className="text-xs text-gray-600 dark:text-gray-400">Medium</span>
+                  <div className="w-4 h-4 rounded bg-blue-300 dark:bg-blue-700/40"></div>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">Medium (40-60%)</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 rounded" style={{ backgroundColor: '#3b82f6' }}></div>
-                  <span className="text-xs text-gray-600 dark:text-gray-400">High</span>
+                  <div className="w-4 h-4 rounded bg-blue-500 dark:bg-blue-500/60"></div>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">High (80-100%)</span>
                 </div>
-                {heatmapData.length > 0 && (
+                {maxJobs > 0 && (
                   <div className="ml-8 text-xs text-gray-500 dark:text-gray-400">
-                    Max: {Math.max(...heatmapData.map(d => d.jobCount)).toLocaleString()} jobs
+                    Max: {maxJobs.toLocaleString()} jobs
                   </div>
                 )}
               </div>
@@ -250,9 +192,10 @@ const Heatmap = () => {
           </h3>
           <ul className="text-blue-700 dark:text-blue-300 text-sm space-y-1">
             <li>• Select a skill from the filters to see its geographic distribution</li>
-            <li>• Hover over districts to see exact job counts</li>
+            <li>• Each card represents a district with job count and color intensity</li>
             <li>• Darker colors indicate higher job concentrations</li>
             <li>• Use the time window filter to see trends over different periods</li>
+            <li>• Hover over cards to see detailed information</li>
           </ul>
         </div>
       </div>

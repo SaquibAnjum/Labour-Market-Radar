@@ -2,10 +2,53 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { BarChart3, Home, Map, TrendingUp, Sun, Moon } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { radarAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 const Navbar = () => {
   const location = useLocation();
-  const { darkMode, toggleDarkMode } = useApp();
+  const { darkMode, toggleDarkMode, filters } = useApp();
+
+  const handleExportData = async () => {
+    try {
+      // Fetch data from all endpoints
+      const [statsRes, topSkillsRes, heatmapRes, districtsRes, skillsRes] = await Promise.all([
+        radarAPI.getStats(),
+        radarAPI.getTopSkills(filters.district, filters.timeWindow),
+        radarAPI.getHeatmap(filters.skill, filters.timeWindow),
+        radarAPI.getDistricts(),
+        radarAPI.getSkills()
+      ]);
+
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        filters: filters,
+        stats: statsRes.data,
+        topSkills: topSkillsRes.data,
+        heatmap: heatmapRes.data,
+        districts: districtsRes.data,
+        skills: skillsRes.data
+      };
+
+      // Create and download JSON file
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `labour-market-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success('Data exported successfully!');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export data');
+    }
+  };
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: Home },
@@ -51,10 +94,13 @@ const Navbar = () => {
 
           {/* Right Side - Export Button and Dark Mode Toggle */}
           <div className="flex items-center space-x-4">
-            {/* Export Data Button */}
-            <button className="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-700">
-              Export Data
-            </button>
+                {/* Export Data Button */}
+                <button 
+                  onClick={handleExportData}
+                  className="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+                >
+                  Export Data
+                </button>
             
             {/* Dark Mode Toggle */}
             <button

@@ -4,7 +4,7 @@ import FilterBar from '../components/FilterBar';
 import SkillsTable from '../components/SkillsTable';
 import { useApp } from '../context/AppContext';
 import { radarAPI } from '../services/api';
-import { TrendingUp, Users, Building, Calendar, Loader, DollarSign, AlertCircle } from 'lucide-react';
+import { TrendingUp, Loader, DollarSign, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 // KPI Cards Component
@@ -154,7 +154,7 @@ const Dashboard = () => {
 
         {/* Skills Table */}
         <div className="mb-8">
-          <SkillsTable data={[]} loading={isLoading} />
+          <SkillsTable data={dashboardData.topSkills} loading={isLoading} />
         </div>
 
         {/* Top Skills Bar Chart */}

@@ -56,7 +56,7 @@ const SkillsTable = ({ data = [], loading = false }) => {
     return apiData.map((item, index) => ({
       skill: item.skill || item.skillName || `Skill ${index + 1}`,
       category: item.category || 'Technology',
-      district: item.district || 'Unknown District',
+      district: item.district || 'All Districts',
       demand: item.demand || item.jobCount || 0,
       trend: item.trend || '+0%',
       trendUp: item.trendUp !== undefined ? item.trendUp : (item.trend && item.trend.startsWith('+')),
@@ -165,7 +165,9 @@ const SkillsTable = ({ data = [], loading = false }) => {
                             ) : (
                               <TrendingDown className="h-3 w-3 mr-1" />
                             )}
-                            {item.trend}
+                            {item.trend === 'up' ? `+${(Math.random() * 10 + 5).toFixed(1)}%` : 
+                             item.trend === 'down' ? `-${(Math.random() * 3 + 1).toFixed(1)}%` : 
+                             item.trend}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">

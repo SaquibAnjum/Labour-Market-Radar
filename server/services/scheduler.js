@@ -2,6 +2,7 @@ import Agenda from 'agenda';
 import WebScraper from './scraper.js';
 import JobNormalizer from './normalizer.js';
 import TrendAggregator from './aggregator.js';
+import AdzunaService from './adzuna.js';
 import { RawJob } from '../models/Job.js';
 
 // This file sets up and schedules all the background jobs.
@@ -14,6 +15,7 @@ class JobScheduler {
     this.scraper = new WebScraper();
     this.normalizer = new JobNormalizer();
     this.aggregator = new TrendAggregator();
+    this.adzunaService = new AdzunaService();
   }
 
   async start() {
@@ -55,14 +57,39 @@ class JobScheduler {
       console.log('Starting trend aggregation job...');
       await this.aggregator.recomputeAll();
     });
+
+    this.agenda.define('fetch adzuna jobs', async (job) => {
+      const { searchTerm, location, maxPages } = job.attrs.data;
+      console.log(`Starting Adzuna fetch job for ${searchTerm} in ${location}`);
+      
+      try {
+        const savedJobs = await this.adzunaService.fetchAndSaveJobs(
+          searchTerm, 
+          location, 
+          maxPages || 3
+        );
+        console.log(`Successfully saved ${savedJobs.length} jobs from Adzuna`);
+      } catch (error) {
+        console.error('Adzuna fetch job failed:', error);
+      }
+    });
   }
 
   scheduleJobs() {
+    // Web scraping jobs
     this.agenda.every('4 hours', 'scrape source', { source: 'indeed', searchTerm: 'Software Developer', location: 'Bangalore' });
     this.agenda.every('4 hours', 'scrape source', { source: 'indeed', searchTerm: 'Data Analyst', location: 'Delhi' });
     
-    this.agenda.every('5 minutes', 'normalize raw jobs');
+    // Adzuna API jobs - fetch popular tech skills
+    this.agenda.every('2 hours', 'fetch adzuna jobs', { searchTerm: 'software developer', location: 'Bangalore', maxPages: 2 });
+    this.agenda.every('2 hours', 'fetch adzuna jobs', { searchTerm: 'data scientist', location: 'Mumbai', maxPages: 2 });
+    this.agenda.every('2 hours', 'fetch adzuna jobs', { searchTerm: 'react developer', location: 'Delhi', maxPages: 2 });
+    this.agenda.every('2 hours', 'fetch adzuna jobs', { searchTerm: 'python developer', location: 'Pune', maxPages: 2 });
+    this.agenda.every('2 hours', 'fetch adzuna jobs', { searchTerm: 'node.js developer', location: 'Hyderabad', maxPages: 2 });
+    this.agenda.every('2 hours', 'fetch adzuna jobs', { searchTerm: 'machine learning engineer', location: 'Chennai', maxPages: 2 });
     
+    // Data processing jobs
+    this.agenda.every('5 minutes', 'normalize raw jobs');
     this.agenda.every('12 hours', 'aggregate trends');
     
     console.log('Recurring jobs have been scheduled.');
@@ -86,6 +113,11 @@ class JobScheduler {
   async triggerAggregation() {
     console.log('Manually triggering aggregation...');
     await this.agenda.now('aggregate trends');
+  }
+
+  async triggerAdzunaFetch(searchTerm, location, maxPages = 3) {
+    console.log(`Manually triggering Adzuna fetch for ${searchTerm} in ${location}`);
+    await this.agenda.now('fetch adzuna jobs', { searchTerm, location, maxPages });
   }
 }
 

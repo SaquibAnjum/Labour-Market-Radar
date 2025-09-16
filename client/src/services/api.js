@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -63,6 +63,32 @@ export const radarAPI = {
 
   // GET /api/radar/skills: Returns a list of all available skills
   getSkills: () => api.get('/radar/skills'),
+
+  // Adzuna API endpoints
+  // GET /api/radar/adzuna/search: Search jobs using Adzuna API
+  searchAdzunaJobs: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    Object.keys(params).forEach(key => {
+      if (params[key] !== undefined && params[key] !== '') {
+        queryParams.append(key, params[key]);
+      }
+    });
+    return api.get(`/radar/adzuna/search?${queryParams.toString()}`);
+  },
+
+  // POST /api/radar/adzuna/fetch: Fetch and save jobs from Adzuna
+  fetchAdzunaJobs: (data) => api.post('/radar/adzuna/fetch', data),
+
+  // GET /api/radar/adzuna/categories: Get job categories
+  getAdzunaCategories: () => api.get('/radar/adzuna/categories'),
+
+  // GET /api/radar/adzuna/trending-skills: Get trending skills from Adzuna data
+  getAdzunaTrendingSkills: (district = '', time = '30') => 
+    api.get(`/radar/adzuna/trending-skills?district=${district}&time=${time}`),
+
+  // GET /api/radar/adzuna/stats: Get job statistics from Adzuna data
+  getAdzunaStats: (district = '', time = '30') => 
+    api.get(`/radar/adzuna/stats?district=${district}&time=${time}`),
 };
 
 export { api };

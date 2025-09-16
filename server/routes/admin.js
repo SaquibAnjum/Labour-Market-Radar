@@ -34,4 +34,20 @@ router.post('/aggregation/trigger', async (req, res, next) => {
     } catch (error) { next(error) }
 });
 
+router.post('/adzuna/trigger', async (req, res, next) => {
+    try {
+        const { searchTerm, location, maxPages } = req.body;
+        if (!searchTerm) {
+            return res.status(400).json({ error: 'Search term is required.' });
+        }
+        await req.scheduler.triggerAdzunaFetch(searchTerm, location || '', maxPages || 3);
+        res.json({ 
+            message: `Adzuna fetch triggered for ${searchTerm} in ${location || 'all locations'}.`,
+            searchTerm,
+            location: location || 'all locations',
+            maxPages: maxPages || 3
+        });
+    } catch (error) { next(error) }
+});
+
 export default router;

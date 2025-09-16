@@ -18,27 +18,36 @@ class JobNormalizer {
     await this.init();
     
     try {
-      const $ = cheerio.load(rawJob.htmlContent);
+      let normalized;
       
-      // Selectors are specific to Indeed. Must be adapted for other sites.
-      const title = $('#jobsearch-ViewjobHeaderText-title-container h1').text().trim() || 'Title not found';
-      const company = $('[data-company-name="true"]').text().trim() || 'Company not found';
-      const description = $('#jobDescriptionText').text().trim() || 'Description not found';
-      const locationText = $('div[data-testid="job-location"]').text().trim() || '';
+      if (rawJob.source === 'adzuna' && rawJob.processed) {
+        // Adzuna data is already normalized and stored as JSON
+        normalized = JSON.parse(rawJob.htmlContent);
+        normalized.dedupeKey = crypto.createHash('sha1').update(`${normalized.company}|${normalized.title}|${normalized.locations[0]?.districtCode || ''}`).digest('hex');
+      } else {
+        // Parse HTML content for other sources (Indeed, etc.)
+        const $ = cheerio.load(rawJob.htmlContent);
+        
+        // Selectors are specific to Indeed. Must be adapted for other sites.
+        const title = $('#jobsearch-ViewjobHeaderText-title-container h1').text().trim() || 'Title not found';
+        const company = $('[data-company-name="true"]').text().trim() || 'Company not found';
+        const description = $('#jobDescriptionText').text().trim() || 'Description not found';
+        const locationText = $('div[data-testid="job-location"]').text().trim() || '';
 
-      const normalized = {
-        source: rawJob.source,
-        sourceJobId: rawJob.fetchUrl.match(/jk=([a-zA-Z0-9]+)/)?.[1] || rawJob.fetchUrl,
-        canonicalUrl: rawJob.fetchUrl,
-        title,
-        company,
-        description,
-        postedAt: new Date(), // More robust date parsing would be needed for production
-        locations: this.parseLocations(locationText),
-        skills: this.extractSkills(title, description),
-      };
+        normalized = {
+          source: rawJob.source,
+          sourceJobId: rawJob.fetchUrl.match(/jk=([a-zA-Z0-9]+)/)?.[1] || rawJob.fetchUrl,
+          canonicalUrl: rawJob.fetchUrl,
+          title,
+          company,
+          description,
+          postedAt: new Date(), // More robust date parsing would be needed for production
+          locations: this.parseLocations(locationText),
+          skills: this.extractSkills(title, description),
+        };
 
-      normalized.dedupeKey = crypto.createHash('sha1').update(`${company}|${title}|${locationText}`).digest('hex');
+        normalized.dedupeKey = crypto.createHash('sha1').update(`${company}|${title}|${locationText}`).digest('hex');
+      }
 
       const duplicate = await Job.findOne({ dedupeKey: normalized.dedupeKey });
       if (duplicate) {

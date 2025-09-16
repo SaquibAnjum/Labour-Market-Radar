@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BarChart3, Home, Map, TrendingUp, Sun, Moon } from 'lucide-react';
+import { BarChart3, Home, Map, TrendingUp, Sun, Moon, TestTube, CheckCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { radarAPI } from '../services/api';
 import toast from 'react-hot-toast';
@@ -54,6 +54,8 @@ const Navbar = () => {
     { name: 'Dashboard', path: '/', icon: Home },
     { name: 'Heatmap', path: '/heatmap', icon: Map },
     { name: 'Analytics', path: '/analytics', icon: TrendingUp },
+    { name: 'Adzuna Test', path: '/adzuna-test', icon: TestTube },
+    { name: 'Integration Test', path: '/adzuna-integration-test', icon: CheckCircle },
   ];
 
   return (

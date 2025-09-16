@@ -6,6 +6,8 @@ import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import Heatmap from './pages/Heatmap';
 import Analytics from './pages/Analytics';
+import AdzunaTest from './components/AdzunaTest';
+import AdzunaIntegrationTest from './components/AdzunaIntegrationTest';
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/heatmap" element={<Heatmap />} />
               <Route path="/analytics" element={<Analytics />} />
+              <Route path="/adzuna-test" element={<AdzunaTest />} />
+              <Route path="/adzuna-integration-test" element={<AdzunaIntegrationTest />} />
             </Routes>
           </main>
           <Toaster 

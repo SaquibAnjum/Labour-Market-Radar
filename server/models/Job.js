@@ -78,15 +78,6 @@ const talentSupplySchema = new mongoose.Schema({
   candidatesAboveScore70: { type: Number, default: 0 },
 });
 
-const demandSupplyIndexSchema = new mongoose.Schema({
-  window: { type: String, required: true, enum: ['7d', '30d', '90d'] },
-  districtCode: { type: String, required: true },
-  skillId: { type: String, required: true },
-  demand: { type: Number, default: 0 },
-  supply: { type: Number, default: 0 },
-  dsi: { type: Number, default: 0 },
-}, { timestamps: true });
-
 jobSchema.index({ postedAt: -1 });
 radarDemandSchema.index({ districtCode: 1, skillId: 1, window: 1 }, { unique: true });
 
@@ -96,4 +87,3 @@ export const Skill = mongoose.model('Skill', skillSchema);
 export const District = mongoose.model('District', districtSchema);
 export const RadarDemand = mongoose.model('RadarDemand', radarDemandSchema);
 export const TalentSupply = mongoose.model('TalentSupply', talentSupplySchema);
-export const DemandSupplyIndex = mongoose.model('DemandSupplyIndex', demandSupplyIndexSchema);

@@ -13,6 +13,21 @@ class AdzunaService {
     this.baseUrl = process.env.ADZUNA_BASE_URL || 'https://api.adzuna.com/v1/api/jobs';
     this.rateLimitDelay = 1000; // 1 second delay between requests
     this.lastRequestTime = 0;
+    
+    // Debug logging for environment variables
+    console.log('🔧 AdzunaService Constructor Debug:');
+    console.log('  ADZUNA_APP_ID:', this.appId ? '✅ Set' : '❌ Missing');
+    console.log('  ADZUNA_APP_KEY:', this.appKey ? '✅ Set' : '❌ Missing');
+    console.log('  ADZUNA_COUNTRY:', this.country);
+    console.log('  ADZUNA_BASE_URL:', this.baseUrl);
+    console.log('  NODE_ENV:', process.env.NODE_ENV);
+    
+    if (!this.appId || !this.appKey) {
+      console.error('❌ CRITICAL: Adzuna API credentials are missing!');
+      console.error('  Please check your environment variables:');
+      console.error('  - ADZUNA_APP_ID:', this.appId || 'undefined');
+      console.error('  - ADZUNA_APP_KEY:', this.appKey || 'undefined');
+    }
   }
 
   /**
@@ -49,6 +64,20 @@ class AdzunaService {
       full_time = true
     } = params;
 
+    // Debug logging for parameters
+    console.log('🔍 AdzunaService.fetchJobs Debug:');
+    console.log('  Parameters:', { what, where, page, results_per_page, category, salary_min, full_time });
+    console.log('  Credentials check:');
+    console.log('    appId:', this.appId ? `${this.appId.substring(0, 4)}...` : 'undefined');
+    console.log('    appKey:', this.appKey ? `${this.appKey.substring(0, 4)}...` : 'undefined');
+
+    // Validate credentials before making request
+    if (!this.appId || !this.appKey) {
+      const error = new Error('Adzuna API credentials are missing');
+      console.error('❌ Adzuna API Error:', error.message);
+      throw error;
+    }
+
     await this.rateLimit();
 
     // Build query parameters according to Adzuna API documentation
@@ -76,19 +105,43 @@ class AdzunaService {
     const url = `${this.baseUrl}/${this.country}/search/${page}?${queryParams.join('&')}`;
     
     try {
-      console.log(`Fetching Adzuna jobs: ${url}`);
+      console.log(`🌐 Making Adzuna API request to: ${url}`);
+      console.log(`📋 Query parameters: ${queryParams.join('&')}`);
+      
       const response = await fetch(url);
+      
+      console.log(`📊 Response status: ${response.status} ${response.statusText}`);
+      console.log(`📊 Response headers:`, Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`Adzuna API error response: ${errorText}`);
-        throw new Error(`Adzuna API error: ${response.status} ${response.statusText}`);
+        console.error(`❌ Adzuna API error response:`, errorText);
+        
+        // Parse error response if it's JSON
+        try {
+          const errorData = JSON.parse(errorText);
+          console.error(`❌ Parsed error data:`, errorData);
+        } catch (parseError) {
+          console.error(`❌ Raw error text:`, errorText);
+        }
+        
+        throw new Error(`Adzuna API error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log(`✅ Adzuna API success:`, {
+        count: data.count || 0,
+        resultsLength: data.results?.length || 0,
+        page: data.page || 1
+      });
+      
       return data;
     } catch (error) {
-      console.error('Error fetching from Adzuna API:', error);
+      console.error('❌ Error fetching from Adzuna API:', {
+        message: error.message,
+        stack: error.stack,
+        url: url
+      });
       throw error;
     }
   }

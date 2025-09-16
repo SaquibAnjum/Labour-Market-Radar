@@ -10,10 +10,10 @@ import radarRoutes from './routes/radar.js';
 import adminRoutes from './routes/admin.js';
 import healthRoutes from './routes/health.js';
 
-dotenv.config();
+dotenv.config({ path: '../.env' });
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8000;
 
 // Middleware
 app.use(helmet());

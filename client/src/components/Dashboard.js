@@ -41,8 +41,8 @@ const Dashboard = () => {
         api.get('/radar/skills')
       ]);
       
-      setDistricts(districtsRes.data.districts);
-      setSkills(skillsRes.data.skills);
+      setDistricts(districtsRes.data);
+      setSkills(skillsRes.data);
     } catch (error) {
       console.error('Error loading initial data:', error);
     }

@@ -53,8 +53,8 @@ const FilterBar = () => {
           >
             <option value="">All Districts</option>
             {districts.map((district) => (
-              <option key={district.code || district.id} value={district.code || district.id}>
-                {district.name}
+              <option key={district.districtCode || district.code || district.id} value={district.districtCode || district.code || district.id}>
+                {district.districtName || district.name} ({district.stateName || district.state})
               </option>
             ))}
           </select>
@@ -122,7 +122,7 @@ const FilterBar = () => {
             
             {filters.district && (
               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                District: {districts.find(d => (d.code || d.id) === filters.district)?.name || filters.district}
+                District: {districts.find(d => (d.districtCode || d.code || d.id) === filters.district)?.districtName || districts.find(d => (d.districtCode || d.code || d.id) === filters.district)?.name || filters.district}
                 <button
                   onClick={() => setFilters({ district: '' })}
                   className="ml-1 hover:text-blue-600 dark:hover:text-blue-300"

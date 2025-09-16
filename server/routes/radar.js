@@ -91,7 +91,6 @@ router.get('/districts', async (req, res, next) => {
     try {
         // Get districts from GeoMapping collection
         const districts = await GeoMapping.find({ isActive: true })
-            .select('districtCode districtName stateName stateCode')
             .sort({ districtName: 1 })
             .lean();
         
@@ -110,16 +109,19 @@ router.get('/districts', async (req, res, next) => {
             return res.json(mockDistricts);
         }
         
-        // Transform to expected format
+        // Transform to expected format with fallback values
         const formattedDistricts = districts.map(district => ({
             districtCode: district.districtCode,
-            districtName: district.districtName,
-            stateName: district.stateName,
-            stateCode: district.stateCode
+            districtName: district.districtName || district.district || district.city || 'Unknown District',
+            stateName: district.stateName || district.state || 'Unknown State',
+            stateCode: district.stateCode || district.districtCode?.substring(0, 2) || 'XX'
         }));
         
         res.json(formattedDistricts);
-    } catch (error) { next(error) }
+    } catch (error) { 
+        console.error('Districts endpoint error:', error);
+        next(error) 
+    }
 });
 
 router.get('/skills', async (req, res, next) => {

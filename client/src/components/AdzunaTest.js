@@ -177,44 +177,46 @@ const AdzunaTest = () => {
           <h3 className="text-lg font-semibold mb-4">Results</h3>
           
           {/* Job Search Results */}
-          {results.results && (
+          {results.results && Array.isArray(results.results) && (
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
-                Found {results.count} jobs (showing {results.results.length})
+                Found {results.count || 0} jobs (showing {results.results.length})
               </p>
               {results.results.map((job, index) => (
                 <div key={index} className="p-4 border border-gray-200 rounded-lg">
-                  <h4 className="font-semibold text-lg text-blue-600">{job.title}</h4>
-                  <p className="text-gray-700">{job.company?.display_name}</p>
-                  <p className="text-sm text-gray-500">{job.location?.display_name}</p>
+                  <h4 className="font-semibold text-lg text-blue-600">{job.title || 'No Title'}</h4>
+                  <p className="text-gray-700">{job.company?.display_name || 'Unknown Company'}</p>
+                  <p className="text-sm text-gray-500">{job.location?.display_name || 'Unknown Location'}</p>
                   {job.salary_min && (
                     <p className="text-sm text-green-600">
-                      Salary: ₹{job.salary_min.toLocaleString()}
-                      {job.salary_max && ` - ₹${job.salary_max.toLocaleString()}`}
+                      Salary: ₹{(job.salary_min || 0).toLocaleString()}
+                      {job.salary_max && ` - ₹${(job.salary_max || 0).toLocaleString()}`}
                     </p>
                   )}
-                  <a 
-                    href={job.redirect_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:text-blue-700 text-sm"
-                  >
-                    View Job →
-                  </a>
+                  {job.redirect_url && (
+                    <a 
+                      href={job.redirect_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:text-blue-700 text-sm"
+                    >
+                      View Job →
+                    </a>
+                  )}
                 </div>
               ))}
             </div>
           )}
 
           {/* Trending Skills Results */}
-          {results.trendingSkills && (
+          {results.trendingSkills && Array.isArray(results.trendingSkills) && (
             <div className="space-y-2">
               <h4 className="font-semibold">Trending Skills (Last 30 days)</h4>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {results.trendingSkills.map((skill, index) => (
                   <div key={index} className="p-2 bg-blue-50 rounded text-sm">
-                    <span className="font-medium">{skill.skill}</span>
-                    <span className="text-gray-500 ml-2">({skill.count})</span>
+                    <span className="font-medium">{skill.skill || 'Unknown'}</span>
+                    <span className="text-gray-500 ml-2">({skill.count || 0})</span>
                   </div>
                 ))}
               </div>
@@ -226,18 +228,16 @@ const AdzunaTest = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 bg-gray-50 rounded-lg">
                 <h4 className="font-semibold mb-2">Job Statistics</h4>
-                <p>Total Jobs: {results.stats.totalJobs}</p>
-                <p>Avg Salary: ₹{Math.round(results.stats.avgSalary).toLocaleString()}</p>
+                <p>Total Jobs: {results.stats.totalJobs || 0}</p>
+                <p>Unique Companies: {results.stats.uniqueCompanies || 0}</p>
+                <p>Unique Skills: {results.stats.uniqueSkills || 0}</p>
+                <p>Avg Salary: ₹{Math.round(results.stats.avgSalary || 0).toLocaleString()}</p>
+                <p>Salary Jobs: {results.stats.salaryJobs || 0}</p>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-semibold mb-2">Top Companies</h4>
-                <ul className="text-sm space-y-1">
-                  {results.stats.topCompanies.slice(0, 5).map((comp, index) => (
-                    <li key={index}>
-                      {comp.company} ({comp.jobCount} jobs)
-                    </li>
-                  ))}
-                </ul>
+                <h4 className="font-semibold mb-2">Time Window</h4>
+                <p>Period: {results.stats.timeWindow || '30'} days</p>
+                <p>District: {results.stats.district || 'All'}</p>
               </div>
             </div>
           )}
